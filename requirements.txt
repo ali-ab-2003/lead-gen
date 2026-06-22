@@ -1,0 +1,24 @@
+# Core
+python-dotenv>=1.0.1
+pyyaml>=6.0.2
+requests>=2.32.3
+
+# Data acquisition
+apify-client>=1.7.1
+
+# Optional zero-cost fallback scraper (Phase 1 fallback)
+playwright>=1.48.0
+
+# Storage (Supabase Postgres)
+supabase>=2.9.0
+
+# Google Sheets export
+gspread>=6.1.4
+google-auth>=2.35.0
+
+# AI enrichment (Groq free tier)
+groq>=0.13.0
+
+# Dashboard
+streamlit>=1.39.0
+pandas>=2.2.3

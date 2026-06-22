@@ -1,0 +1,44 @@
+# Lead-gen run configuration.
+# Edit this file to change WHAT we look for and WHERE — no code changes needed.
+
+# Business categories / search terms to look for.
+categories:
+  - plumber
+  - electrician
+  - dentist
+  - hair salon
+  - auto repair shop
+
+# Target areas. Each is appended to a category to form a Google Maps query,
+# e.g. "plumber in Manchester, UK".
+areas:
+  - "Manchester, UK"
+  - "Leeds, UK"
+
+# Per (category x area) result cap. Keep modest to stay within free tiers
+# and to be a good citizen re: rate limits.
+max_results_per_query: 50
+
+# Language / region hints passed to the scraper.
+language: en
+
+# Filtering
+filter:
+  # Only keep businesses with no website (the whole point). If you ever want
+  # to include businesses that DO have a site, set this to false.
+  require_no_website: true
+  # Skip businesses with no phone AND no email (nothing to act on).
+  require_some_contact: true
+
+# Enrichment
+enrich:
+  # Try to find a public email / owner via Facebook + light web search.
+  enabled: true
+
+# AI (Groq) scoring + outreach drafting
+ai:
+  enabled: true
+  # Used to personalise the outreach draft. Describe who YOU are / what you sell.
+  outreach_persona: >
+    We build affordable, fast websites for small local businesses that don't
+    yet have one. Friendly, concise, no hard sell.

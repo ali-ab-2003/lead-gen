@@ -1,0 +1,19 @@
+# Secrets
+.env
+secrets/
+*.json
+!.vscode/*.json
+
+# Output
+output/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+.idea/
