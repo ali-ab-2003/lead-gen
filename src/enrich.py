@@ -33,7 +33,14 @@ _TIMEOUT = 12
 _SLEEP_BETWEEN = 1.0  # be polite
 
 # Emails that are almost certainly not the business's own contact.
-_JUNK_EMAIL = ("sentry.io", "wixpress.com", "example.com", "@2x", ".png", ".jpg")
+# Domains/strings that are never a real business contact — usually scraped from
+# the search engine's own page markup, CDNs, analytics, or image filenames.
+_JUNK_EMAIL = (
+    "duckduckgo.com", "google.com", "gstatic.com", "googleapis.com",
+    "schema.org", "w3.org", "sentry.io", "wixpress.com", "example.com",
+    "cloudflare", "jsdelivr", "fontawesome", "@2x", ".png", ".jpg", ".gif",
+    ".svg", ".webp", "youremail", "email@", "name@", "user@", "domain.com",
+)
 
 
 def _search_html(query: str) -> str:

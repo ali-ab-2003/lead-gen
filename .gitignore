@@ -3,6 +3,7 @@
 secrets/
 *.json
 !.vscode/*.json
+.streamlit/secrets.toml
 
 # Output
 output/

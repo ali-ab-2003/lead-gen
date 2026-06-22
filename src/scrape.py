@@ -87,7 +87,11 @@ def scrape(settings: Settings) -> list[Lead]:
     }
 
     run = client.actor(actor_id).call(run_input=run_input)
-    dataset_id = run["defaultDatasetId"]
+    # apify-client 3.x returns a typed Run object; older versions a dict.
+    dataset_id = (
+        run.get("defaultDatasetId") if isinstance(run, dict)
+        else run.default_dataset_id
+    )
 
     # Map results back to their (category, area) using the search string.
     by_search: dict[str, tuple[str, str]] = {

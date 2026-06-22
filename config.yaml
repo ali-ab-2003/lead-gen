@@ -5,9 +5,12 @@
 categories:
   - plumber
   - electrician
-  - dentist
+  # - dentist
   - hair salon
   - auto repair shop
+  - restaurant
+  - cafe
+  - bakery
 
 # Target areas. Each is appended to a category to form a Google Maps query,
 # e.g. "plumber in Manchester, UK".
@@ -17,8 +20,7 @@ areas:
 
 # Per (category x area) result cap. Keep modest to stay within free tiers
 # and to be a good citizen re: rate limits.
-max_results_per_query: 50
-
+max_results_per_query: 25
 # Language / region hints passed to the scraper.
 language: en
 
