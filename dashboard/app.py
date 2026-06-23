@@ -124,7 +124,7 @@ options = STATUS_OPTIONS + [s for s in editor_df["status"].unique() if s not in 
 
 edited = st.data_editor(
     editor_df,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
     disabled=[c for c in editor_cols if c != "status"],
     column_config={
