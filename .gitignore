@@ -18,3 +18,5 @@ venv/
 # OS / editor
 .DS_Store
 .idea/
+# Added by code-review-graph
+.code-review-graph/
