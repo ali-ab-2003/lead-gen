@@ -185,22 +185,26 @@ if "name" in view.columns and len(view):
     tab_call, tab_email, tab_short = st.tabs(["Call script", "Email draft", "Short message"])
 
     with tab_call:
+        ckey = f"call_area_{pid}"
+        if ckey not in st.session_state:
+            st.session_state[ckey] = row.get("call_script", "") or ""
         if st.button("Generate call script", disabled=not groq_ready, key="gen_call"):
             with st.spinner("Generating call script..."):
-                st.session_state[f"call_{pid}"] = generate_call_script(lead, DEFAULT_PERSONA)
-        call_text = st.session_state.get(f"call_{pid}", row.get("call_script", "") or "")
-        call_edit = st.text_area("Call script", call_text, height=340, key=f"call_area_{pid}")
+                st.session_state[ckey] = generate_call_script(lead, DEFAULT_PERSONA)
+        call_edit = st.text_area("Call script", height=340, key=ckey)
         if st.button("Save call script to lead", key="save_call", disabled=not call_edit.strip()):
             save_field(pid, "call_script", call_edit)
             load_leads.clear()
             st.success("Call script saved.")
 
     with tab_email:
+        ekey = f"email_area_{pid}"
+        if ekey not in st.session_state:
+            st.session_state[ekey] = row.get("email_draft", "") or ""
         if st.button("Generate email draft", disabled=not groq_ready, key="gen_email"):
             with st.spinner("Generating email..."):
-                st.session_state[f"email_{pid}"] = generate_email_draft(lead, DEFAULT_PERSONA)
-        email_text = st.session_state.get(f"email_{pid}", row.get("email_draft", "") or "")
-        email_edit = st.text_area("Email draft", email_text, height=340, key=f"email_area_{pid}")
+                st.session_state[ekey] = generate_email_draft(lead, DEFAULT_PERSONA)
+        email_edit = st.text_area("Email draft", height=340, key=ekey)
         if st.button("Save email draft to lead", key="save_email", disabled=not email_edit.strip()):
             save_field(pid, "email_draft", email_edit)
             load_leads.clear()
