@@ -38,6 +38,8 @@ class Lead:
     lead_score: Optional[int] = None      # 0-100
     score_reason: str = ""
     outreach_draft: str = ""
+    call_script: str = ""        # generated on-demand in the dashboard
+    email_draft: str = ""        # generated on-demand in the dashboard
 
     # ── Lifecycle ────────────────────────────────────────────────────────
     status: str = "new"

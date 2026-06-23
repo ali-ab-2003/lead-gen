@@ -22,6 +22,8 @@ create table if not exists leads (
     lead_score        integer,
     score_reason      text not null default '',
     outreach_draft    text not null default '',
+    call_script       text not null default '',
+    email_draft       text not null default '',
 
     -- lifecycle
     status            text not null default 'new',
@@ -33,3 +35,8 @@ create index if not exists leads_area_idx     on leads (area);
 create index if not exists leads_category_idx on leads (category);
 create index if not exists leads_score_idx    on leads (lead_score desc);
 create index if not exists leads_status_idx   on leads (status);
+
+-- Migration for tables created before call_script/email_draft existed.
+-- Safe to run on an existing database (no-op if columns already present).
+alter table leads add column if not exists call_script text not null default '';
+alter table leads add column if not exists email_draft text not null default '';

@@ -7,11 +7,17 @@ or deploy free on Streamlit Community Cloud (set the same secrets there).
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 from supabase import create_client
+
+from src.ai_enrich import DEFAULT_PERSONA, generate_call_script, generate_email_draft
 
 load_dotenv()
 
@@ -21,14 +27,27 @@ st.set_page_config(page_title="Lead Generator", layout="wide")
 STATUS_OPTIONS = ["new", "reached out", "interested", "not interested", "converted"]
 
 
+def _secret(name: str) -> str:
+    val = os.getenv(name)
+    if val:
+        return val
+    try:
+        return st.secrets.get(name, "")
+    except Exception:
+        return ""
+
+
 @st.cache_resource
 def _client():
-    url = os.getenv("SUPABASE_URL") or st.secrets.get("SUPABASE_URL", "")
-    key = os.getenv("SUPABASE_KEY") or st.secrets.get("SUPABASE_KEY", "")
+    url, key = _secret("SUPABASE_URL"), _secret("SUPABASE_KEY")
     if not url or not key:
         st.error("SUPABASE_URL / SUPABASE_KEY not configured.")
         st.stop()
     return create_client(url, key)
+
+
+def save_field(place_id: str, field: str, value: str) -> None:
+    _client().table("leads").update({field: value}).eq("place_id", place_id).execute()
 
 
 @st.cache_data(ttl=300)
@@ -142,10 +161,51 @@ st.download_button(
     mime="text/csv",
 )
 
-# ── Per-lead outreach draft viewer ───────────────────────────────────────
-st.subheader("Outreach drafts")
+# ── Per-lead workspace: call script + email draft ────────────────────────
+st.subheader("Lead workspace")
 if "name" in view.columns and len(view):
-    pick = st.selectbox("Pick a lead", view["name"].tolist())
-    row = view[view["name"] == pick].iloc[0]
-    st.markdown(f"**Score:** {row.get('lead_score', '-')} - {row.get('score_reason', '')}")
-    st.text_area("Draft message", row.get("outreach_draft", ""), height=160)
+    labels = [f"{r['name']} ({r['area']})" for _, r in view.iterrows()]
+    idx = st.selectbox("Pick a lead", range(len(labels)), format_func=lambda i: labels[i])
+    row = view.iloc[idx]
+    pid = row["place_id"]
+    lead = row.to_dict()
+
+    st.markdown(
+        f"**{row.get('name','')}** — {row.get('category','')}, {row.get('area','')}  \n"
+        f"Phone: {row.get('phone') or '-'} | Email: {row.get('email') or '-'} | "
+        f"Status: {row.get('status','new')} | Score: {row.get('lead_score','-')}"
+    )
+    if row.get("score_reason"):
+        st.caption(row["score_reason"])
+
+    groq_ready = bool(_secret("GROQ_API_KEY"))
+    if not groq_ready:
+        st.info("Add GROQ_API_KEY to your secrets to generate call scripts and emails.")
+
+    tab_call, tab_email, tab_short = st.tabs(["Call script", "Email draft", "Short message"])
+
+    with tab_call:
+        if st.button("Generate call script", disabled=not groq_ready, key="gen_call"):
+            with st.spinner("Generating call script..."):
+                st.session_state[f"call_{pid}"] = generate_call_script(lead, DEFAULT_PERSONA)
+        call_text = st.session_state.get(f"call_{pid}", row.get("call_script", "") or "")
+        call_edit = st.text_area("Call script", call_text, height=340, key=f"call_area_{pid}")
+        if st.button("Save call script to lead", key="save_call", disabled=not call_edit.strip()):
+            save_field(pid, "call_script", call_edit)
+            load_leads.clear()
+            st.success("Call script saved.")
+
+    with tab_email:
+        if st.button("Generate email draft", disabled=not groq_ready, key="gen_email"):
+            with st.spinner("Generating email..."):
+                st.session_state[f"email_{pid}"] = generate_email_draft(lead, DEFAULT_PERSONA)
+        email_text = st.session_state.get(f"email_{pid}", row.get("email_draft", "") or "")
+        email_edit = st.text_area("Email draft", email_text, height=340, key=f"email_area_{pid}")
+        if st.button("Save email draft to lead", key="save_email", disabled=not email_edit.strip()):
+            save_field(pid, "email_draft", email_edit)
+            load_leads.clear()
+            st.success("Email draft saved.")
+
+    with tab_short:
+        st.text_area("Short outreach message (from pipeline)",
+                     row.get("outreach_draft", "") or "", height=160, key=f"short_{pid}")

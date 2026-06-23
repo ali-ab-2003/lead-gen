@@ -77,6 +77,77 @@ def _apply(lead: Lead, data: dict) -> None:
     lead.outreach_draft = str(data.get("outreach_draft", "")).strip()
 
 
+DEFAULT_PERSONA = (
+    "A small agency that builds affordable, fast websites for local businesses "
+    "that don't yet have one. Friendly, concise, no hard sell."
+)
+
+
+def _lead_facts(lead: dict) -> str:
+    """Human-readable summary of everything we know about a lead (dict form)."""
+    def g(k, default="unknown"):
+        v = lead.get(k)
+        return v if v not in (None, "") else default
+    return (
+        f"- Name: {g('name')}\n"
+        f"- Category: {g('category')}\n"
+        f"- Area: {g('area')}\n"
+        f"- Address: {g('address')}\n"
+        f"- Phone: {g('phone')}\n"
+        f"- Email: {g('email')}\n"
+        f"- Owner/decision-maker: {g('owner_name')}\n"
+        f"- Google rating: {g('rating')} ({g('reviews_count', '?')} reviews)\n"
+        f"- They currently have NO website.\n"
+        f"- Why they're a good prospect: {g('score_reason', 'n/a')}"
+    )
+
+
+def _chat(messages: list[dict], max_tokens: int = 700) -> str:
+    api_key = env("GROQ_API_KEY")
+    if not api_key:
+        raise RuntimeError("GROQ_API_KEY not set.")
+    from groq import Groq
+    client = Groq(api_key=api_key)
+    resp = client.chat.completions.create(
+        model=env("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        messages=messages,
+        temperature=0.6,
+        max_tokens=max_tokens,
+    )
+    return resp.choices[0].message.content.strip()
+
+
+def generate_call_script(lead: dict, persona: str = DEFAULT_PERSONA) -> str:
+    """A cold-call script tailored to one business. Phone is the main channel."""
+    return _chat([
+        {"role": "system", "content":
+            "You write natural, concise cold-call scripts for a salesperson. "
+            "Use short spoken sentences, include a friendly opener, a reason for "
+            "calling tied to the specific business, one or two likely objections "
+            "with responses, and a clear ask (e.g. book a quick chat). Plain text, "
+            "labelled sections. No emojis."},
+        {"role": "user", "content":
+            f"Sender/persona reaching out:\n{persona}\n\n"
+            f"Business to call:\n{_lead_facts(lead)}\n\n"
+            "Write the call script."},
+    ])
+
+
+def generate_email_draft(lead: dict, persona: str = DEFAULT_PERSONA) -> str:
+    """A short outreach email tailored to one business (subject + body)."""
+    return _chat([
+        {"role": "system", "content":
+            "You write short, personalised B2B outreach emails. Start with a line "
+            "'Subject: ...' then a blank line then the body. Keep it under 130 words, "
+            "specific to the business, warm and low-pressure, with one clear call to "
+            "action. Plain text. No emojis."},
+        {"role": "user", "content":
+            f"Sender/persona:\n{persona}\n\n"
+            f"Business to email:\n{_lead_facts(lead)}\n\n"
+            "Write the email."},
+    ])
+
+
 def ai_enrich_leads(leads: list[Lead], settings: Settings) -> list[Lead]:
     api_key = env("GROQ_API_KEY")
     if not api_key:
