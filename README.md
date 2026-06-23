@@ -4,7 +4,7 @@ Automatically finds local businesses **without a website** in chosen categories
 and areas, scrapes their contact details, makes a best-effort attempt at the
 owner/decision-maker contact, scores each lead with AI, and delivers the results
 to a **Google Sheet**, a **CSV**, and a **Streamlit dashboard** — on a daily
-schedule via **Jenkins**.
+schedule.
 
 > **Honest caveat:** businesses with no website rarely expose a public email.
 > Phone + business data is reliable; **email and owner name are best-effort** and
@@ -23,8 +23,9 @@ config.yaml → scrape (Apify) → filter (no website) → enrich (email/owner)
 ```
 
 Everything runs on free tiers: **Apify** (scraping), **Groq** (AI),
-**Supabase** (storage), **Google Sheets** (output), **Streamlit** (dashboard),
-**Jenkins in Docker** (daily scheduler, local).
+**Supabase** (storage), **Google Sheets** (output), **Streamlit** (dashboard).
+The daily run is scheduled locally (Windows Task Scheduler); an optional
+containerized path (Docker + Jenkins) is included for always-on hosting.
 
 ## Setup
 
@@ -60,17 +61,25 @@ streamlit run dashboard/app.py
 Filter by area/category/status/score, view AI outreach drafts, export CSV.
 Deploy free on Streamlit Community Cloud with the same Supabase secrets.
 
-## Daily schedule (Jenkins)
+## Daily schedule
 
-1. Run Jenkins in Docker locally (give it the host Docker socket).
-2. Add credentials: `apify-token`, `supabase-url`, `supabase-key`,
-   `groq-api-key`, `google-sheet-id` (Secret text) and `google-sa-json`
-   (Secret file).
-3. Create a Pipeline job pointing at [`Jenkinsfile`](Jenkinsfile). It builds the
-   image and runs the pipeline daily (`cron('H 7 * * *')`), archiving the CSV.
+The default scheduler is **Windows Task Scheduler**, which runs
+[`run_daily.bat`](run_daily.bat) once a day. Register it (PowerShell):
 
-The daily job only fires while the PC + Jenkins are running. To run unattended
-24/7, move the same Jenkins setup to an always-on host — no code changes needed.
+```powershell
+$action  = New-ScheduledTaskAction  -Execute "C:\path\to\lead-gen\run_daily.bat"
+$trigger = New-ScheduledTaskTrigger -Daily -At 8:00pm
+Register-ScheduledTask -TaskName "LeadGenDaily" -Action $action -Trigger $trigger `
+  -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable) -Force
+```
+
+See [DEPLOY.md](DEPLOY.md) for managing/changing the schedule. The job only fires
+while the PC is on.
+
+**Optional — Docker + Jenkins:** [`Dockerfile`](Dockerfile) and
+[`Jenkinsfile`](Jenkinsfile) provide a containerized pipeline you can run on an
+always-on host (cron `H 7 * * *`, credentials via the Jenkins credentials store).
+Use this if you'd rather not depend on a local machine being awake.
 
 ## Project layout
 
@@ -86,5 +95,6 @@ The daily job only fires while the PC + Jenkins are running. To run unattended
 | `src/export.py` | Append new leads to Google Sheet |
 | `main.py` | Pipeline orchestrator |
 | `dashboard/app.py` | Streamlit dashboard |
-| `Dockerfile` / `Jenkinsfile` | Containerized daily run |
+| `run_daily.bat` | Daily run launcher (Windows Task Scheduler) |
+| `Dockerfile` / `Jenkinsfile` | Optional containerized daily run |
 | `db/schema.sql` | `leads` table |

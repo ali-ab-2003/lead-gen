@@ -18,5 +18,9 @@ venv/
 # OS / editor
 .DS_Store
 .idea/
+
+# Local AI-tooling config (not part of the project)
+.claude/
+CLAUDE.md
 # Added by code-review-graph
 .code-review-graph/
