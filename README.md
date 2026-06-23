@@ -1,4 +1,4 @@
-# Google Maps "No-Website" Lead Generator
+# Lead Generator
 
 Automatically finds local businesses **without a website** in chosen categories
 and areas, scrapes their contact details, makes a best-effort attempt at the
